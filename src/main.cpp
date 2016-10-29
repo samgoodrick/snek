@@ -4,27 +4,34 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
-
-enum DIRECTION {
-    NORTH,
-    WEST,
-    SOUTH,
-    EAST
-};
+#include <cassert>
+#include "snek.hpp"
+#include "globals.hpp"
 
 struct Food
 {
     Food()
 	:texture( SDL_LoadBMP( "../img/snek.bmp" ) )
     {
-	int randx = (rand() % 640);
-	int randy = (rand() % 480);
-	x = randx - floor(log2(randx));
-	y = randy - floor(log2(randy));
+	x = (rand() % 640);
+	y = (rand() % 480);
+
+	if( x < 16 )
+	    x += 32;
+	if( x > 640 - 16 )
+	    x -= 32;
+	if( y > 480 - 16 )
+	    y -= 32;
+	if( y < 16 )
+	    y += 32;
 	Collider.x = x;
 	Collider.y = y;
 	Collider.w = 16;
 	Collider.h = 16;
+	offset.w = 16;
+	offset.h = 16;
+	offset.x = x;
+	offset.y = y;
     }
     ~Food()
     {
@@ -32,7 +39,6 @@ struct Food
     }
     void Render( SDL_Surface* screen )
     {
-	SDL_Rect offset;
 	offset.x = x;
 	offset.y = y;
 	SDL_BlitSurface( texture, NULL, screen, &offset ); 
@@ -41,134 +47,7 @@ struct Food
     int y;
     SDL_Surface* texture;
     SDL_Rect Collider;
-};
-
-struct SnekNode
-{
-    SnekNode()
-	:next(), prev(), x(), y(), texture( SDL_LoadBMP( "../img/snek.bmp" ) )
-    {
-    }
-    ~SnekNode()
-    {
-	SDL_FreeSurface( texture );
-    }
-    void Render( SDL_Surface* screen )
-    {
-	SDL_Rect offset;
-	offset.x = x;
-	offset.y = y;
-	SDL_BlitSurface( texture, NULL, screen, &offset ); 
-    }
-    SnekNode* next;
-    SnekNode* prev;
-    SDL_Surface* texture;
-    int x;
-    int y;
-};
-
-class SnekList
-{
-public:
-    SnekNode* head;
-    SnekNode* tail;
-    SnekList()
-	:head( new SnekNode ), tail( head ), mDir( EAST )
-    {
-	head->x = tail->x = 640/2 - floor(log2(640));
-	head->y = tail->y = 480/2 - floor(log2(640));
-	Collider.x = head->x;
-	Collider.y = head->y;
-	Collider.w = 16;
-	Collider.h = 16;
-    }
-    ~SnekList()
-    {
-	while( tail )
-	{
-	    SnekNode* newtail = tail->prev;
-	    pop();
-	    tail = newtail;
-	}
-    }
-    void push()
-    {
-	SnekNode* temptail = new SnekNode;
-	temptail->prev = tail;
-	tail->next = temptail;
-	tail = temptail;
-
-	tail->x = tail->prev->x + 16;
-	tail->y = tail->prev->y;
-    }
-    void move()
-    {
-	SnekNode* visitor = head;
-	std::vector<std::pair<int,int>> positions;
-	while( visitor )
-	{
-	    positions.push_back( std::make_pair( visitor->x, visitor->y ) );
-	    visitor = visitor->next;
-	}
-	visitor = head->next;
-	switch( mDir )
-	{
-	case NORTH:
-	    head->y -= 16;
-	    break;
-	case SOUTH:
-	    head->y += 16;
-	    break;
-	case EAST:
-	    head->x += 16;
-	    break;
-	case WEST:
-	    head->x -= 16;
-	    break;
-	}
-
-	for( int i = 0; visitor; ++i )
-	{
-	    visitor->x = positions[i].first;
-	    visitor->y = positions[i].second;
-	    visitor = visitor->next;
-	}
-	Collider.x = head->x;
-	Collider.y = head->y;
-
-    }
-    void pop()
-    {
-	SnekNode* tempnext = nullptr;
-	if( head != tail )
-	{
-	    tempnext = tail->prev;
-	}
-	delete tail;
-	tail = tempnext;
-	
-    }
-    void renderlist( SDL_Surface* screen )
-    {
-	SnekNode* visitor = head;
-	while( visitor )
-	{
-	    visitor->Render( screen );
-	    visitor = visitor->next;
-	}
-    }
-    void updatepositions()
-    {
-	SnekNode* visitor = tail;
-	while( visitor )
-	{
-	    visitor->y += 16;
-	    visitor = visitor->prev;
-	}
-    }
-
-    DIRECTION mDir;
-    SDL_Rect Collider;
+    SDL_Rect offset;
 };
 
 bool Collision_With_Food( SnekList& snek, Food* food )
@@ -195,6 +74,7 @@ bool Collision_With_Food( SnekList& snek, Food* food )
 	return false;
     return true;
 }
+
 
 int main( int argc, char** argv )
 {
@@ -276,6 +156,7 @@ int main( int argc, char** argv )
 	    list.push();
 	    is_food = false;
 	}
+	list.self_collision();
 	SDL_Delay( 100 );
     }
 
