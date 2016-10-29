@@ -1,6 +1,9 @@
 #include "SDL/SDL.h"
 #include <vector>
 #include <utility>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
 
 enum DIRECTION {
     NORTH,
@@ -9,11 +12,41 @@ enum DIRECTION {
     EAST
 };
 
+struct Food
+{
+    Food()
+	:texture( SDL_LoadBMP( "../img/snek.bmp" ) )
+    {
+	int randx = (rand() % 640);
+	int randy = (rand() % 480);
+	x = randx - floor(log2(randx));
+	y = randy - floor(log2(randy));
+    }
+    ~Food()
+    {
+	SDL_FreeSurface( texture );
+    }
+    void Render( SDL_Surface* screen )
+    {
+	SDL_Rect offset;
+	offset.x = x;
+	offset.y = y;
+	SDL_BlitSurface( texture, NULL, screen, &offset ); 
+    }
+    int x;
+    int y;
+    SDL_Surface* texture;
+};
+
 struct SnekNode
 {
     SnekNode()
 	:next(), prev(), x(), y(), texture( SDL_LoadBMP( "../img/snek.bmp" ) )
     {
+    }
+    ~SnekNode()
+    {
+	SDL_FreeSurface( texture );
     }
     void Render( SDL_Surface* screen )
     {
@@ -31,14 +64,14 @@ struct SnekNode
 
 class SnekList
 {
+public:
     SnekNode* head;
     SnekNode* tail;
-public:
     SnekList()
 	:head( new SnekNode ), tail( head ), mDir( EAST )
     {
-	head->x = tail->x = 640/2;
-	head->y = tail->y = 480/2;
+	head->x = tail->x = 640/2 - floor(log2(640));
+	head->y = tail->y = 480/2 - floor(log2(640));
     }
     ~SnekList()
     {
@@ -126,8 +159,14 @@ public:
     DIRECTION mDir;
 };
 
+bool Collision_With_Food( SnekList& snek, Food* food )
+{
+    return ( ( snek.head->x == food->x ) && ( snek.head->y == food->y ) );
+}
+
 int main( int argc, char** argv )
 {
+    srand( time( NULL ) );
     SDL_Init( SDL_INIT_EVERYTHING );
 
     SDL_Surface* screen = SDL_SetVideoMode( 640, 480, 32, SDL_SWSURFACE );
@@ -137,15 +176,45 @@ int main( int argc, char** argv )
     SDL_Event e;
     bool quit = false;
     SnekList list;
-    for( int i = 0; i < 5; ++i )
-	list.push();
+
+    SDL_Surface* vert = SDL_LoadBMP( "../img/vert.bmp" );
+    SDL_Surface* horiz = SDL_LoadBMP( "../img/horiz.bmp" );
+
+    std::vector<SDL_Rect> vert_offsets;
+    for( int i = 0; i < 480; i+=16 )
+    {
+	SDL_Rect offset;
+	offset.y = i;
+    }
+
+    bool is_food = true;
+    auto food = new Food;
 
     while( !quit )
     {
 	SDL_BlitSurface( background, NULL, screen, NULL );
+	for( int i = 0; i < 480; i+=16 )
+	{
+	    SDL_Rect offset;
+	    offset.y = i;
+	    SDL_BlitSurface( vert, NULL, screen, &offset );
+	}
+	for( int i = 0; i < 640; i += 16 )
+	{
+	    SDL_Rect offset;
+	    offset.x = i;
+	    SDL_BlitSurface( horiz, NULL, screen, NULL );
+	}
 	list.renderlist( screen );
+	food->Render( screen );
 	SDL_Flip( screen );
 	list.move();
+
+	if( !is_food )
+	{
+	    food = new Food;
+	    is_food = true;
+	}
 	while( SDL_PollEvent( &e ) )
 	{
 	    if( e.type == SDL_QUIT )
@@ -166,6 +235,13 @@ int main( int argc, char** argv )
 		    quit = true;
 	    }
 	    
+	}
+	if( Collision_With_Food( list, food ) )
+	{
+	    SDL_Delay( 1 );
+	    delete food;
+	    list.push();
+	    is_food = false;
 	}
 	SDL_Delay( 100 );
     }
