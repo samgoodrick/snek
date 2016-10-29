@@ -21,6 +21,10 @@ struct Food
 	int randy = (rand() % 480);
 	x = randx - floor(log2(randx));
 	y = randy - floor(log2(randy));
+	Collider.x = x;
+	Collider.y = y;
+	Collider.w = 16;
+	Collider.h = 16;
     }
     ~Food()
     {
@@ -36,6 +40,7 @@ struct Food
     int x;
     int y;
     SDL_Surface* texture;
+    SDL_Rect Collider;
 };
 
 struct SnekNode
@@ -72,6 +77,10 @@ public:
     {
 	head->x = tail->x = 640/2 - floor(log2(640));
 	head->y = tail->y = 480/2 - floor(log2(640));
+	Collider.x = head->x;
+	Collider.y = head->y;
+	Collider.w = 16;
+	Collider.h = 16;
     }
     ~SnekList()
     {
@@ -124,6 +133,8 @@ public:
 	    visitor->y = positions[i].second;
 	    visitor = visitor->next;
 	}
+	Collider.x = head->x;
+	Collider.y = head->y;
 
     }
     void pop()
@@ -157,11 +168,32 @@ public:
     }
 
     DIRECTION mDir;
+    SDL_Rect Collider;
 };
 
 bool Collision_With_Food( SnekList& snek, Food* food )
 {
-    return ( ( snek.head->x == food->x ) && ( snek.head->y == food->y ) );
+    int leftA, leftB;
+    int rightA, rightB;
+    int bottomA, bottomB;
+    int topA, topB;
+
+    leftA = snek.Collider.x;
+    rightA = snek.Collider.x + snek.Collider.w;
+    topA = snek.Collider.y;
+    bottomA = snek.Collider.y + snek.Collider.w;
+
+    leftB = food->Collider.x;
+    rightB = food->Collider.x + food->Collider.w;
+    topB = food->Collider.y;
+    bottomB = food->Collider.y + food->Collider.w;
+
+    if( bottomA <= topB ||
+	    topA >= bottomB ||
+	    rightA <= leftB ||
+	    leftA >= rightB )
+	return false;
+    return true;
 }
 
 int main( int argc, char** argv )
@@ -184,27 +216,28 @@ int main( int argc, char** argv )
     for( int i = 0; i < 480; i+=16 )
     {
 	SDL_Rect offset;
+	offset.x = 0;
 	offset.y = i;
     }
-
+    std::vector<SDL_Rect> horiz_offsets;
+    for( int i = 0; i < 640; i+=16 )
+    {
+	SDL_Rect offset;
+	offset.x = i;
+	offset.y = 0;
+    }
+    
     bool is_food = true;
     auto food = new Food;
 
     while( !quit )
     {
 	SDL_BlitSurface( background, NULL, screen, NULL );
-	for( int i = 0; i < 480; i+=16 )
-	{
-	    SDL_Rect offset;
-	    offset.y = i;
-	    SDL_BlitSurface( vert, NULL, screen, &offset );
-	}
-	for( int i = 0; i < 640; i += 16 )
-	{
-	    SDL_Rect offset;
-	    offset.x = i;
-	    SDL_BlitSurface( horiz, NULL, screen, NULL );
-	}
+	for( auto& i : vert_offsets )
+	    SDL_BlitSurface( vert, NULL, screen, &i );
+	for( auto& i : horiz_offsets )
+	    SDL_BlitSurface( horiz, NULL, screen, &i );
+
 	list.renderlist( screen );
 	food->Render( screen );
 	SDL_Flip( screen );
