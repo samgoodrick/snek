@@ -3,19 +3,39 @@
 #include <utility>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include <cmath>
 #include <cassert>
 #include "snek.hpp"
 #include "globals.hpp"
+#include "util.hpp"
+
+Uint32 Respawn = 0;
 
 struct Food
 {
     Food()
-	:texture( SDL_LoadBMP( "../img/snek.bmp" ) )
+	:texture( SDL_LoadBMP( "../img/food.bmp" ) ), Active( true )
+    {
+	Randomize_Position();
+    }
+    ~Food()
+    {
+    	SDL_FreeSurface( texture );
+	texture = nullptr;
+    }
+    void Render( SDL_Surface* screen )
+    {
+	offset.x = x;
+	offset.y = y;
+	SDL_BlitSurface( texture, NULL, screen, &offset ); 
+    }
+    void Randomize_Position()
     {
 	x = (rand() % 640);
 	y = (rand() % 480);
-
+	round_to_multiple<int>( x, 16 );
+	round_to_multiple<int>( y, 16 );
 	if( x < 16 )
 	    x += 32;
 	if( x > 640 - 16 )
@@ -33,48 +53,43 @@ struct Food
 	offset.x = x;
 	offset.y = y;
     }
-    ~Food()
-    {
-	SDL_FreeSurface( texture );
-    }
-    void Render( SDL_Surface* screen )
-    {
-	offset.x = x;
-	offset.y = y;
-	SDL_BlitSurface( texture, NULL, screen, &offset ); 
-    }
     int x;
     int y;
     SDL_Surface* texture;
     SDL_Rect Collider;
     SDL_Rect offset;
+    bool Active;
 };
 
-bool Collision_With_Food( SnekList& snek, Food* food )
+bool Collision_With_Food( Snek& snek, Food* food )
 {
-    int leftA, leftB;
-    int rightA, rightB;
-    int bottomA, bottomB;
-    int topA, topB;
+    // int leftA, leftB;
+    // int rightA, rightB;
+    // int bottomA, bottomB;
+    // int topA, topB;
+    
+    // leftA = snek.mCollider.x;
+    // rightA = snek.mCollider.x + snek.mCollider.w;
+    // topA = snek.mCollider.y;
+    // bottomA = snek.mCollider.y + snek.mCollider.h;
 
-    leftA = snek.Collider.x;
-    rightA = snek.Collider.x + snek.Collider.w;
-    topA = snek.Collider.y;
-    bottomA = snek.Collider.y + snek.Collider.w;
+    // leftB = food->Collider.x;
+    // rightB = food->Collider.x + food->Collider.w;
+    // topB = food->Collider.y;
+    // bottomB = food->Collider.y + food->Collider.h;
 
-    leftB = food->Collider.x;
-    rightB = food->Collider.x + food->Collider.w;
-    topB = food->Collider.y;
-    bottomB = food->Collider.y + food->Collider.w;
+    // if( bottomA <= topB ||
+    // 	topA >= bottomB ||
+    // 	rightA <= leftB ||
+    // 	leftA >= rightB )
+    // 	return false;
+    
+    if( snek.mCollider.x == food->Collider.x &&
+	snek.mCollider.y == food->Collider.y )
+	return true;
 
-    if( bottomA <= topB ||
-	    topA >= bottomB ||
-	    rightA <= leftB ||
-	    leftA >= rightB )
-	return false;
-    return true;
+    return false;
 }
-
 
 int main( int argc, char** argv )
 {
@@ -87,79 +102,69 @@ int main( int argc, char** argv )
     SDL_Flip( screen );
     SDL_Event e;
     bool quit = false;
-    SnekList list;
+    Snek snek;
 
     SDL_Surface* vert = SDL_LoadBMP( "../img/vert.bmp" );
     SDL_Surface* horiz = SDL_LoadBMP( "../img/horiz.bmp" );
-
-    std::vector<SDL_Rect> vert_offsets;
-    for( int i = 0; i < 480; i+=16 )
-    {
-	SDL_Rect offset;
-	offset.x = 0;
-	offset.y = i;
-    }
-    std::vector<SDL_Rect> horiz_offsets;
-    for( int i = 0; i < 640; i+=16 )
-    {
-	SDL_Rect offset;
-	offset.x = i;
-	offset.y = 0;
-    }
     
     bool is_food = true;
     auto food = new Food;
 
     while( !quit )
     {
-	SDL_BlitSurface( background, NULL, screen, NULL );
-	for( auto& i : vert_offsets )
-	    SDL_BlitSurface( vert, NULL, screen, &i );
-	for( auto& i : horiz_offsets )
-	    SDL_BlitSurface( horiz, NULL, screen, &i );
-
-	list.renderlist( screen );
-	food->Render( screen );
-	SDL_Flip( screen );
-	list.move();
-
 	if( !is_food )
 	{
-	    food = new Food;
-	    is_food = true;
+	    if( SDL_GetTicks() - Respawn >= 25 )
+	    {
+		food->Randomize_Position();
+		is_food = true;
+		Respawn = 0;
+	    }
 	}
+	SDL_BlitSurface( background, NULL, screen, NULL );
+
+	snek.Render( screen );
+	
+	if( is_food )
+	{
+	    food->Render( screen );
+	    if( Collision_With_Food( snek, food ) && Respawn == 0 )
+	    {
+		snek.Push();
+		is_food = false;
+		Respawn = SDL_GetTicks();
+		
+	    }		
+	}
+	
+	snek.Move();
+
 	while( SDL_PollEvent( &e ) )
 	{
 	    if( e.type == SDL_QUIT )
-		quit = true;
+	    	quit = true;
 	    if( e.type == SDL_KEYDOWN )
 	    {
-		if( e.key.keysym.sym == SDLK_p )
-		    list.push();
-		else if( e.key.keysym.sym == SDLK_UP )
-		    list.mDir = NORTH;
-		else if( e.key.keysym.sym == SDLK_DOWN )
-		    list.mDir = SOUTH;
-		else if( e.key.keysym.sym == SDLK_RIGHT )
-		    list.mDir = EAST;
-		else if( e.key.keysym.sym == SDLK_LEFT )
-		    list.mDir = WEST;
-		else if( e.key.keysym.sym == SDLK_ESCAPE )
-		    quit = true;
+	    	if( e.key.keysym.sym == SDLK_p )
+	    	    snek.Push();
+	    	else if( e.key.keysym.sym == SDLK_UP )
+	    	    snek.mDir = NORTH;
+	    	else if( e.key.keysym.sym == SDLK_DOWN )
+	    	    snek.mDir = SOUTH;
+	    	else if( e.key.keysym.sym == SDLK_RIGHT )
+	    	    snek.mDir = EAST;
+	    	else if( e.key.keysym.sym == SDLK_LEFT )
+	    	    snek.mDir = WEST;
+	    	else if( e.key.keysym.sym == SDLK_ESCAPE )
+	    	    quit = true;
 	    }
 	    
 	}
-	if( Collision_With_Food( list, food ) )
-	{
-	    SDL_Delay( 1 );
-	    delete food;
-	    list.push();
-	    is_food = false;
-	}
-	list.self_collision();
 	SDL_Delay( 100 );
+	SDL_Flip( screen );
     }
 
+    delete food;
     SDL_Quit();
     return 0;
 }
