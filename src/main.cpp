@@ -160,9 +160,8 @@ int main( int argc, char** argv )
 
 	for( auto i : walls )
 	{
-	    if( Collision( snek.mCollider, i->mCollider ) )
-		std::cout << "game over. snek at " << snek.mCollider.x << ", " << snek.mCollider.y <<
-		    ". Wall at " << i->mCollider.x << ", " << i->mCollider.y << std::endl;
+	    if( Collision<SDL_Rect>( snek.mCollider, i->mCollider ) )
+		assert( false );
 	}
 	
 	snek.Move();
