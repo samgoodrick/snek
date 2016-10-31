@@ -1,0 +1,16 @@
+#ifndef WALL_HPP
+#define WALL_HPP
+
+class Wall
+{
+public:
+    Wall();
+    ~Wall();
+
+    SDL_Rect mCollider;
+private:
+    SDL_Surface* mTexture;
+    SDL_Rect mOffset;
+};
+
+#endif

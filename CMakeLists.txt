@@ -6,4 +6,4 @@ Find_Package(SDL REQUIRED)
 
 link_libraries( ${SDL_LIBRARY} )
 
-add_executable(snek ../src/main.cpp)
+add_executable(snek ../src/main.cpp ../src/collision.cpp ../src/snek.cpp ../src/wall.cpp)

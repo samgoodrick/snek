@@ -7,10 +7,12 @@
 #include <cmath>
 #include <cassert>
 #include "snek.hpp"
+#include "wall.hpp"
 #include "globals.hpp"
 #include "util.hpp"
 
 Uint32 Respawn = 0;
+int gScore = 1;
 
 struct Food
 {
@@ -84,11 +86,14 @@ bool Collision_With_Food( Snek& snek, Food* food )
     // 	leftA >= rightB )
     // 	return false;
     
-    if( snek.mCollider.x == food->Collider.x &&
-	snek.mCollider.y == food->Collider.y )
-	return true;
+    return( snek.mCollider.x == food->Collider.x &&
+	    snek.mCollider.y == food->Collider.y );
+}
 
-    return false;
+template<typename T>
+bool Collision( T Obj1, T Obj2 )
+{
+    return ( Obj1.y == Obj2.y && Obj1.x == Obj2.x );
 }
 
 int main( int argc, char** argv )
@@ -106,6 +111,18 @@ int main( int argc, char** argv )
 
     SDL_Surface* vert = SDL_LoadBMP( "../img/vert.bmp" );
     SDL_Surface* horiz = SDL_LoadBMP( "../img/horiz.bmp" );
+    std::vector<Wall*> walls;
+    walls.reserve( 2*( 640 / 16 ) + 2*( 480 / 16 ) );
+    for( int i = 0; i < 640; i += 16 )
+    {
+	if( i < 480 )
+	{
+	    walls.push_back( new Wall( 0, i ) );
+	    walls.push_back( new Wall( 640 - 16, i ) );
+	}
+	walls.push_back( new Wall( i, 0 ) );
+	walls.push_back( new Wall( i, 480 - 16 ) );
+    }
     
     bool is_food = true;
     auto food = new Food;
@@ -124,6 +141,9 @@ int main( int argc, char** argv )
 	SDL_BlitSurface( background, NULL, screen, NULL );
 
 	snek.Render( screen );
+
+	for( auto i : walls )
+	    i->Render( screen );
 	
 	if( is_food )
 	{
@@ -131,10 +151,18 @@ int main( int argc, char** argv )
 	    if( Collision_With_Food( snek, food ) && Respawn == 0 )
 	    {
 		snek.Push();
+		++gScore;
 		is_food = false;
 		Respawn = SDL_GetTicks();
 		
 	    }		
+	}
+
+	for( auto i : walls )
+	{
+	    if( Collision( snek.mCollider, i->mCollider ) )
+		std::cout << "game over. snek at " << snek.mCollider.x << ", " << snek.mCollider.y <<
+		    ". Wall at " << i->mCollider.x << ", " << i->mCollider.y << std::endl;
 	}
 	
 	snek.Move();
@@ -147,6 +175,8 @@ int main( int argc, char** argv )
 	    {
 	    	if( e.key.keysym.sym == SDLK_p )
 	    	    snek.Push();
+		else if( e.key.keysym.sym == SDLK_s )
+		    std::cout << gScore << std::endl;
 	    	else if( e.key.keysym.sym == SDLK_UP )
 	    	    snek.mDir = NORTH;
 	    	else if( e.key.keysym.sym == SDLK_DOWN )

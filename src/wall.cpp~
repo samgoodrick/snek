@@ -1,0 +1,8 @@
+#include "wall.hpp"
+
+Wall()
+    :mTexture( SDL_LoadBMP( "../img/wall.bmp" )
+{
+    mOffset.w = mOffset.h = mCollider.w = mCollider.h = 16;
+    mOffset.x = mOffset.y = mCollider.x = mCollider.y = 16;
+}
