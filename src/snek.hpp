@@ -26,6 +26,7 @@ public:
     void Render( SDL_Surface* screen );
     void Move();
     SDL_Rect GetCollider();
+    bool SelfCollide();
     
     DIRECTION mDir;
     SDL_Rect mCollider;

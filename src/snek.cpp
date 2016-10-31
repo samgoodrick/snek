@@ -72,6 +72,16 @@ void Snek::Move()
 
 }
 
+bool Snek::SelfCollide()
+{
+    for( auto i : Snake )
+    {
+	if( i != head && head->x == i->x && head->y == i->y )
+	    return true;
+    }
+    return false;
+}
+
 Node::Node( int px, int py )
     :x( px ), y( py )
 {

@@ -12,7 +12,7 @@
 #include "util.hpp"
 
 Uint32 Respawn = 0;
-int gScore = 1;
+int gScore = 0;
 
 struct Food
 {
@@ -46,6 +46,7 @@ struct Food
 	    y -= 32;
 	if( y < 16 )
 	    y += 32;
+
 	Collider.x = x;
 	Collider.y = y;
 	Collider.w = 16;
@@ -161,7 +162,16 @@ int main( int argc, char** argv )
 	for( auto i : walls )
 	{
 	    if( Collision<SDL_Rect>( snek.mCollider, i->mCollider ) )
-		assert( false );
+	    {
+		quit = true;
+		std::cout << "Score: " << gScore << std::endl;
+	    }
+	}
+
+	if( snek.SelfCollide() )
+	{
+	    quit = true;
+	    std::cout << "Score: " << gScore << std::endl;
 	}
 	
 	snek.Move();
@@ -177,13 +187,17 @@ int main( int argc, char** argv )
 		else if( e.key.keysym.sym == SDLK_s )
 		    std::cout << gScore << std::endl;
 	    	else if( e.key.keysym.sym == SDLK_UP )
-	    	    snek.mDir = NORTH;
+		    if( snek.mDir != SOUTH )
+			snek.mDir = NORTH;
 	    	else if( e.key.keysym.sym == SDLK_DOWN )
-	    	    snek.mDir = SOUTH;
+		    if( snek.mDir != NORTH )
+			snek.mDir = SOUTH;
 	    	else if( e.key.keysym.sym == SDLK_RIGHT )
-	    	    snek.mDir = EAST;
-	    	else if( e.key.keysym.sym == SDLK_LEFT )
-	    	    snek.mDir = WEST;
+		    if( snek.mDir != WEST )
+			snek.mDir = EAST;
+		    else if( e.key.keysym.sym == SDLK_LEFT )
+			if( snek.mDir != EAST )
+			    snek.mDir = WEST;
 	    	else if( e.key.keysym.sym == SDLK_ESCAPE )
 	    	    quit = true;
 	    }
