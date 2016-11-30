@@ -35,15 +35,15 @@ struct Food
     }
     void Randomize_Position()
     {
-		x = (rand() % 640);
-		y = (rand() % 480);
+		x = (rand() % SCREEN_WIDTH);
+		y = (rand() % SCREEN_HEIGHT);
 		round_to_multiple<int>( x, 16 );
 		round_to_multiple<int>( y, 16 );
 		if( x < 16 )
 			x += 32;
-		if( x > 640 - 16 )
+		if( x >= SCREEN_WIDTH - 16 )
 			x -= 32;
-		if( y > 480 - 16 )
+		if( y >= SCREEN_HEIGHT - 16 )
 			y -= 32;
 		if( y < 16 )
 			y += 32;
@@ -108,7 +108,7 @@ int main( int argc, char** argv )
     srand( time( NULL ) );
     SDL_Init( SDL_INIT_EVERYTHING );
 
-    SDL_Surface* screen = SDL_SetVideoMode( 640, 480, 32, SDL_SWSURFACE );
+    SDL_Surface* screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_SWSURFACE );
     SDL_Surface* background = SDL_LoadBMP( "../img/background.bmp" );
     SDL_BlitSurface( background, NULL, screen, NULL );
     SDL_Flip( screen );
@@ -119,16 +119,16 @@ int main( int argc, char** argv )
     SDL_Surface* vert = SDL_LoadBMP( "../img/vert.bmp" );
     SDL_Surface* horiz = SDL_LoadBMP( "../img/horiz.bmp" );
     std::vector<Wall*> walls;
-    walls.reserve( 2*( 640 / 16 ) + 2*( 480 / 16 ) );
-    for( int i = 0; i < 640; i += 16 )
+    walls.reserve( 2*( SCREEN_WIDTH / 16 ) + 2*( SCREEN_HEIGHT / 16 ) );
+    for( int i = 0; i < SCREEN_WIDTH; i += 16 )
     {
-		if( i < 480 )
+		if( i < SCREEN_HEIGHT )
 		{
 			walls.push_back( new Wall( 0, i ) );
-			walls.push_back( new Wall( 640 - 16, i ) );
+			walls.push_back( new Wall( SCREEN_WIDTH - 16, i ) );
 		}
 		walls.push_back( new Wall( i, 0 ) );
-		walls.push_back( new Wall( i, 480 - 16 ) );
+		walls.push_back( new Wall( i, SCREEN_HEIGHT - 16 ) );
     }
     
     bool is_food = true;
