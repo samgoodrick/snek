@@ -11,7 +11,7 @@ Snek::Snek()
 Snek::~Snek()
 {
     for( auto i : Snake )
-	delete i;
+		delete i;
 }
 
 void Snek::Push()
@@ -22,7 +22,7 @@ void Snek::Push()
 void Snek::Render( SDL_Surface* screen )
 {
     for( auto i : Snake )
-	SDL_BlitSurface( mTexture, nullptr, screen, &(i->mOffset) );
+		SDL_BlitSurface( mTexture, nullptr, screen, &(i->mOffset) );
 }
 
 SDL_Rect Snek::GetCollider()
@@ -37,31 +37,31 @@ void Snek::Move()
     positions.reserve(Snake.size());
     for( auto i : Snake )
     {
-	positions.push_back( std::make_pair( i->x, i->y ) );
+		positions.push_back( std::make_pair( i->x, i->y ) );
     }
 
     switch( mDir )
     {
     case NORTH:
-	Snake[0]->y -= 16;
-	mCollider.y = Snake[0]->mCollider.y = Snake[0]->y;
-	Snake[0]->mOffset.y = Snake[0]->y;
-	break;
+		head->y -= 16;
+		mCollider.y = head->mCollider.y = head->y;
+		head->mOffset.y = head->y;
+		break;
     case SOUTH:
-	Snake[0]->y += 16;
-	mCollider.y = Snake[0]->mCollider.y = Snake[0]->y;
-	Snake[0]->mOffset.y = Snake[0]->y;
-	break;
+		head->y += 16;
+		mCollider.y = head->mCollider.y = head->y;
+		head->mOffset.y = head->y;
+		break;
     case EAST:
-	Snake[0]->x += 16;
-	mCollider.x = Snake[0]->mCollider.x = Snake[0]->x;
-	Snake[0]->mOffset.x = Snake[0]->x;
-	break;
+		head->x += 16;
+		mCollider.x = head->mCollider.x = head->x;
+		head->mOffset.x = head->x;
+		break;
     case WEST:
-	Snake[0]->x -= 16;
-	mCollider.x = Snake[0]->mCollider.x = Snake[0]->x;
-	Snake[0]->mOffset.x = Snake[0]->x;
-	break;
+		head->x -= 16;
+		mCollider.x = head->mCollider.x = head->x;
+		head->mOffset.x = head->x;
+		break;
     }
     
     for( int i = 1; i < Snake.size(); ++i )
@@ -76,8 +76,8 @@ bool Snek::SelfCollide()
 {
     for( auto i : Snake )
     {
-	if( i != head && head->x == i->x && head->y == i->y )
-	    return true;
+		if( i != head && head->x == i->x && head->y == i->y )
+			return true;
     }
     return false;
 }
