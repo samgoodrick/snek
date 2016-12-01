@@ -16,7 +16,14 @@ Snek::~Snek()
 
 void Snek::Push()
 {
-    Snake.emplace_back( new Node( Snake[Snake.size() - 1]->x+16, Snake[Snake.size()-1]->y ) );
+	if( mDir == WEST )
+		Snake.emplace_back( new Node( Snake[Snake.size() - 1]->x+16, Snake[Snake.size()-1]->y ) );
+	else if( mDir == EAST )
+		Snake.emplace_back( new Node( Snake[Snake.size() - 1]->x-16, Snake[Snake.size()-1]->y ) );
+	else if( mDir == SOUTH )
+		Snake.emplace_back( new Node( Snake[Snake.size() - 1]->x, Snake[Snake.size()-1]->y-16 ) );
+	else if( mDir == NORTH )
+		Snake.emplace_back( new Node( Snake[Snake.size() - 1]->x, Snake[Snake.size()-1]->y+16 ) );			
 }
 
 void Snek::Render( SDL_Surface* screen )
