@@ -30,7 +30,6 @@ public:
     
     DIRECTION mDir;
     SDL_Rect mCollider;
-private:
     std::vector<Node*> Snake;
     SDL_Surface* mTexture;
     Node* head;
